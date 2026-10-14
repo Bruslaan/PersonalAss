@@ -33,7 +33,10 @@ async def run(task, job_id):
             report(message="Recherche läuft …", step=number)
         agent = Agent(
             task=task, browser=session,
-            llm=ChatOpenAI(model=os.environ.get("OPENAI_MODEL", "gpt-5.6-terra"), temperature=None),
+            llm=ChatOpenAI(model=os.environ.get("OPENAI_MODEL", "gpt-6.1-sol"),
+                           temperature=None, frequency_penalty=None,
+                           reasoning_effort="low",
+                           reasoning_models=["gpt-6.1-sol", "gpt-5.6-terra"]),
             max_actions_per_step=3, max_failures=2, use_judge=False,
             register_new_step_callback=step,
             file_system_path="/tmp/cloud-browser/agent-files",

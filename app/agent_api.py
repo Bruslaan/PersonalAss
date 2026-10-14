@@ -15,6 +15,13 @@ import uuid
 
 STATE = Path("/tmp/cloud-browser/jobs")
 MAX_SECONDS = 240
+MODELS = {"gpt-6.1-sol": "GPT-6.1 Sol", "gpt-5.6-terra": "GPT-5.6 Terra"}
+DEFAULT_MODEL = "gpt-6.1-sol"
+
+
+def default_model():
+    configured = os.environ.get("OPENAI_MODEL", DEFAULT_MODEL)
+    return configured if configured in MODELS else DEFAULT_MODEL
 
 
 def cdp_ready():
@@ -33,6 +40,7 @@ class Jobs:
         self.started = 0
         self.state = "idle"
         self.message = "Bereit für einen Rechercheauftrag."
+        self.model = None
 
     def terminate(self, state, message):
         with self.lock:
@@ -64,11 +72,16 @@ class Jobs:
             return {"state": self.state, "message": details.get("message", self.message),
                     "step": details.get("step", 0), "result": details.get("result", ""),
                     "key_configured": bool(os.environ.get("OPENAI_API_KEY")),
-                    "model": os.environ.get("OPENAI_MODEL", "gpt-5.6-terra"),
+                    "model": self.model or default_model(),
+                    "default_model": default_model(),
+                    "models": [{"id": key, "label": label} for key, label in MODELS.items()],
                     "browser_connected": cdp_ready()}
 
-    def start(self, task):
+    def start(self, task, model=None):
         with self.lock:
+            model = default_model() if model is None else model
+            if not isinstance(model, str) or model not in MODELS:
+                raise ValueError("Bitte ein unterstütztes Modell auswählen.")
             if self.process and self.process.poll() is None:
                 raise ValueError("Ein Auftrag läuft bereits. Zuerst stoppen.")
             if not os.environ.get("OPENAI_API_KEY"):
@@ -82,7 +95,9 @@ class Jobs:
             self.process = subprocess.Popen(
                 [sys.executable, str(Path(__file__).with_name("agent_worker.py")), self.job_id],
                 stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-                text=True, start_new_session=True)
+                text=True, start_new_session=True,
+                env={**os.environ, "OPENAI_MODEL": model})
+            self.model = model
             self.process.stdin.write(task)
             self.process.stdin.close()
             self.started = time.monotonic()
@@ -135,7 +150,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 task = data.get("task", "")
                 if not isinstance(task, str) or not 1 <= len(task.strip()) <= 2000:
                     raise ValueError("Bitte einen Auftrag mit höchstens 2000 Zeichen eingeben.")
-                JOBS.start(task.strip())
+                JOBS.start(task.strip(), data.get("model"))
             elif self.path == "/api/stop":
                 JOBS.terminate("stopped", "Auftrag gestoppt. Der Browser bleibt geöffnet.")
             else:
