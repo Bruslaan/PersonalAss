@@ -36,3 +36,10 @@ Die lokale Prüfung lief mit dem gebündelten Codex-Python. Das macOS-System-Pyt
 - Neun Unittests bestanden: CSRF-Schutz, ungültige Eingaben, fehlender Schlüssel, Doppelauftrag, tatsächliches Beenden eines Worker-Prozesses, Portprüfung und Ausschluss des API-Schlüssels aus Desktop-Prozessen.
 - `OPENAI_API_KEY` ist noch nicht hinterlegt. Daher kein kostenpflichtiger LLM-Recherchetest durchgeführt. Keine Aussage über Qualität der Kleinanzeigen-Recherche oder API-Kontozugriff.
 - Die Browser-Use-Erweiterung wird nach dem Push auf Railway deployt. Der Cloud-Neustarttest des Profils und die vollständige KI-Recherche bleiben getrennt von den lokalen Nachweisen.
+
+## Erweiterung: fortlaufende Unterhaltung
+
+- Persistenter Worker und Browser-Use-Agent mit Folgeaufträgen über `add_new_task`; Schrittgrenze wird für jeden Folgeauftrag weitergezählt.
+- Verlauf auf `/data/assistant/conversation.json`; Wiederherstellung nach Neustart, Modellwechsel und Stopp sowie „Neue Unterhaltung“ implementiert.
+- Lokale Tests mit simuliertem Modell prüfen Agent-/Worker-Wiederverwendung, Kontextübergabe, Modellwechsel, Wiederherstellung von Kriterien/Angebots-URL/Zwischenschritt, Stopp und CSRF-Schutz. Container-Build erfolgreich.
+- Keine kostenpflichtigen Modellaufrufe und keine automatisierte Browserprüfung dieser Erweiterung. Nutzer übernimmt den vollständigen Recherche- und Bezugstest nach dem Push.
