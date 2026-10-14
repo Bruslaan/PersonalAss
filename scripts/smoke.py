@@ -31,12 +31,19 @@ def main():
         except urllib.error.HTTPError as e:
             return e.code
 
-    for path in ("/", "/vnc.html", "/app/ui.js", "/api/status"):
+    for path in ("/", "/vnc.html", "/app/ui.js", "/ui.js", "/voice.js", "/api/status"):
         assert status(path) == 401, f"Unauthenticated {path} not rejected"
     assert status("/vnc.html", {"Authorization": "Basic aW52YWxpZDppbnZhbGlk"}) == 401
     assert status("/healthz") == 200, "Desktop not ready"
     assert status("/", {"Authorization": auth}) == 200
     assert status("/vnc.html", {"Authorization": auth}) == 200
+    for path in ("/ui.js", "/voice.js"):
+        with urllib.request.urlopen(urllib.request.Request(origin + path, headers={"Authorization": auth})) as response:
+            assert response.status == 200
+            assert "javascript" in response.headers.get("Content-Type", ""), "Module MIME type missing"
+    for path, expected in (("/", "DENY"), ("/vnc.html", "SAMEORIGIN")):
+        with urllib.request.urlopen(urllib.request.Request(origin + path, headers={"Authorization": auth})) as response:
+            assert response.headers.get("X-Frame-Options") == expected
     assert status("/websockify", {"Origin": origin}) == 401
     assert status("/websockify", {"Origin": "https://other.invalid", "Authorization": auth}) == 403
     # CDP is internal only; the public proxy must never expose debugging routes.

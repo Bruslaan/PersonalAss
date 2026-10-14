@@ -8,22 +8,23 @@ body{font:17px system-ui;max-width:800px;margin:5vh auto;padding:24px;background
 </style>
 <h1>Dein Cloud-Assistent</h1>
 <p>Gib einen Rechercheauftrag ein und verfolge die Aktionen im Cloud-Browser.</p>
-<div class="buttons"><a target="_blank" rel="noopener" href="/vnc.html?autoconnect=true&amp;resize=scale&amp;path=websockify">Liveansicht öffnen</a></div>
+<div class="buttons"><button id="live-toggle" aria-expanded="false">Liveansicht hier anzeigen</button><a target="_blank" rel="noopener" href="/vnc.html?autoconnect=true&amp;resize=scale&amp;path=websockify">Liveansicht öffnen</a></div>
+<iframe id="live-frame" title="Livebild des Cloud-Browsers" hidden style="width:100%;height:60vh;border:1px solid #52617b;border-radius:8px"></iframe>
 <p><label for="model">Modell für den nächsten Auftrag</label><br>
 <select id="model" style="font:inherit;padding:12px;background:#1c2940;color:white;border:1px solid #52617b;border-radius:8px" disabled></select></p>
+<section aria-label="Sprachsteuerung">
+<div class="buttons"><button id="mic" aria-pressed="false">Mikrofon einschalten</button></div>
+<p id="voice-status" role="status">Mikrofon aus.</p>
+<p>Einmal Mikrofon einschalten und Zugriff erlauben. Danach deinen Auftrag sprechen; nach einer kurzen Pause wird er automatisch gesendet. Sage „Stopp“, um zu unterbrechen. Eine neue Anweisung während der Recherche ersetzt den laufenden Auftrag.</p>
+<p class="muted">Während das Mikrofon aktiv ist, wird erkannte Sprache als Auftrag behandelt. Die Spracherkennung deines Browsers kann Audio an seinen Spracherkennungsdienst senden. An unseren Server geht nur der erkannte Text. Kein zusätzlicher Sprach-API-Schlüssel nötig. Lass diese Seite für Sprachbefehle geöffnet; Browser können die Erkennung im Hintergrund pausieren.</p>
+<p>Erkannt: <span id="transcript" aria-live="polite">—</span></p>
+</section>
 <label for="task">Dein Auftrag</label>
 <textarea id="task" rows="4" maxlength="2000" placeholder="Suche auf Kleinanzeigen nach einer Gimbal-Kamera und vergleiche drei Angebote."></textarea>
 <div class="buttons"><button id="start" disabled>Recherche starten</button><button id="stop" disabled>Stopp</button><button id="reset" disabled>Neue Unterhaltung</button></div>
 <p id="status" role="status">Verbindung wird geprüft …</p>
 <p id="setup" class="muted"></p>
 <h2>Unterhaltung</h2><p class="muted">Der Verlauf bleibt nach Neuladen und Neustarts erhalten. Folgeaufträge beziehen sich auf diese Unterhaltung und den aktiven Cloud-Tab.</p><div id="history"></div>
-<p class="muted">Für diesen Prototyp: recherchieren und Angebote öffnen. Nachrichtenversand und Sprachsteuerung folgen später. Bei einem Auftrag werden Seiteninhalte und Bildschirmbilder an OpenAI übermittelt. Pro Auftrag höchstens 8 Schritte und 4 Minuten; dies ist kein festes Kostenlimit.</p>
-<script>
-const start=document.querySelector('#start'),stop=document.querySelector('#stop'),status=document.querySelector('#status'),setup=document.querySelector('#setup'),history=document.querySelector('#history'),reset=document.querySelector('#reset'),model=document.querySelector('#model');
-let modelsLoaded=false,historyJSON="";
-function renderHistory(turns){const value=JSON.stringify(turns);if(value===historyJSON)return;historyJSON=value;history.replaceChildren();for(const turn of turns){const user=document.createElement("p");const label=document.createElement("strong");label.textContent="Du: ";user.append(label,document.createTextNode(turn.task));const answer=document.createElement("pre");answer.textContent=turn.result||(turn.state==="running"?"Auftrag läuft …":"Auftrag unterbrochen.");history.append(user,answer);}}
-async function refresh(){try{const response=await fetch('/api/status',{cache:'no-store'});if(!response.ok)throw Error('Status nicht erreichbar');const s=await response.json();if(!modelsLoaded){for(const item of s.models){const option=document.createElement('option');option.value=item.id;option.textContent=item.label;model.append(option);}model.value=s.default_model;modelsLoaded=true;}reset.disabled=s.state==='running';model.disabled=s.state==='running';start.disabled=s.state==='running'||!s.key_configured||!s.browser_connected;stop.disabled=s.state!=='running';status.textContent=s.message+(s.step?' · Schritt '+s.step:'');setup.textContent=!s.key_configured?'API-Schlüssel fehlt: In Railway → PersonalAss → Variables → OPENAI_API_KEY hinterlegen und deployen.':'Modell: '+s.model+(s.browser_connected?' · Browser verbunden':' · Browser startet');renderHistory(s.turns||[]);}catch(e){status.textContent=e.message;start.disabled=true;stop.disabled=true;}}
-async function send(path,data){start.disabled=true;reset.disabled=true;try{const r=await fetch(path,{method:'POST',headers:{'Content-Type':'application/json','X-Cloud-Browser':'1'},body:JSON.stringify(data)});const s=await r.json();if(!r.ok)throw Error(s.error||'Anfrage fehlgeschlagen');if(path==='/api/start')document.querySelector('#task').value='';await refresh();}catch(e){status.textContent=e.message;}}
-start.onclick=()=>send('/api/start',{task:document.querySelector('#task').value,model:model.value});stop.onclick=()=>send('/api/stop',{});reset.onclick=()=>send('/api/reset',{});refresh();setInterval(refresh,2000);
-</script>
+<p class="muted">Für diesen Prototyp: recherchieren und Angebote öffnen. Nachrichtenversand folgt später. Bei einem Auftrag werden Seiteninhalte und Bildschirmbilder an OpenAI übermittelt. Pro Auftrag höchstens 8 Schritte und 4 Minuten; dies ist kein festes Kostenlimit.</p>
+<script type="module" src="/ui.js"></script>
 </html>

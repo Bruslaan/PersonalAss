@@ -43,3 +43,12 @@ Die lokale Prüfung lief mit dem gebündelten Codex-Python. Das macOS-System-Pyt
 - Verlauf auf `/data/assistant/conversation.json`; Wiederherstellung nach Neustart, Modellwechsel und Stopp sowie „Neue Unterhaltung“ implementiert.
 - Lokale Tests mit simuliertem Modell prüfen Agent-/Worker-Wiederverwendung, Kontextübergabe, Modellwechsel, Wiederherstellung von Kriterien/Angebots-URL/Zwischenschritt, Stopp und CSRF-Schutz. Container-Build erfolgreich.
 - Keine kostenpflichtigen Modellaufrufe und keine automatisierte Browserprüfung dieser Erweiterung. Nutzer übernimmt den vollständigen Recherche- und Bezugstest nach dem Push.
+
+## Erweiterung: Sprachaufträge und Stopp
+
+- Browserseitige deutsche Spracherkennung mit sichtbarem Mikrofonstatus, vorläufigem Transkript und automatischem Senden nach kurzer Pause.
+- Stopp-Erkennung während laufender Aufträge; neue Anweisungen stoppen zuerst den alten Auftrag. Reihenfolge von Start/Stopp wird auch bei einem verzögerten Start eingehalten.
+- Elf lokale JavaScript-Tests mit simulierter Spracherkennung bestanden: vorläufig/final, Duplikate, mehrteilige Aufträge, Stopp, Mikrofon aus, Wiederverbindung, verweigerte Berechtigung, fehlende Unterstützung, Start/Stopp-Rennen und Fehler.
+- Tatsächliches Mikrofon, Spracherkennungsdienst, Safari/Chrome und Cloud-Reaktion nicht automatisch geprüft; Nutzer übernimmt diese Tests nach Deployment. Keine kostenpflichtige Sprach-/Modellanfrage für diese Prüfung.
+
+- Docker-Build und lokaler Smoke-Test erfolgreich: Sprachmodule ohne Anmeldung 401, nach Anmeldung mit JavaScript-MIME-Typ 200; Hauptseite DENY und noVNC SAMEORIGIN; Origin-Schutz, Healthcheck und echter VNC-WebSocket bestehen. Testcontainer anschließend gestoppt.

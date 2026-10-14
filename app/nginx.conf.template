@@ -51,6 +51,19 @@ http {
             proxy_send_timeout 3600s;
             proxy_buffering off;
         }
+        location = /vnc.html {
+            root /usr/share/novnc;
+            try_files $uri =404;
+            # Only the authenticated same-origin assistant may embed its live display.
+            add_header X-Frame-Options SAMEORIGIN always;
+            add_header X-Content-Type-Options nosniff always;
+            add_header Referrer-Policy no-referrer always;
+            add_header Cache-Control "no-store" always;
+        }
+        location ~ ^/(ui|voice)\.js$ {
+            root /app;
+            try_files $uri =404;
+        }
         location = / {
             # try_files runs after authentication; no public redirect bypass.
             root /app;
