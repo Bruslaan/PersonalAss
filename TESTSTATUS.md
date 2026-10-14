@@ -2,31 +2,27 @@
 
 ## Lokal geprüft
 
-- Vier Python-Unittests bestanden: ungültige Zugangsdaten abweisen, ungültige/reservierte Ports abweisen, Zugangsdaten aus der Umgebung eines tatsächlich gestarteten Kindprozesses entfernen und ihn beenden, ausgefallene Prozesse als ungesund erkennen.
-- Shell-Syntax von `app/entrypoint.sh` mit `sh -n` geprüft.
-- Python-Dateien auf Syntax geprüft; Railway-TOML lokal geparst. Compose-YAML manuell geprüft; kein YAML-Parser verfügbar.
-- Offizielle Railway-Dokumentation zu Dockerfiles, HTTPS, Healthchecks, Volumes, Konfiguration und Kosten sowie Browser-Use-Parameter und Selenium-Desktop-Beispiel gelesen. Quellen stehen in der README.
+- Docker Desktop 4.95.0 installiert; CLI und Linux-Engine 29.8.2 funktionieren.
+- Debian-Container für ARM64 erfolgreich gebaut. Chromium und der sichtbare X11-Desktop starten mit 1 vCPU und 2 GB RAM.
+- Nginx als Benutzer browser geprüft. Fehler bei temporären Verzeichnissen und stderr-Zugriff korrigiert.
+- Smoke-Test erfolgreich: UI-Authentifizierung, fremde WebSocket-Origin abweisen, Healthcheck, echter WebSocket-Upgrade und VNC-RFB-Begrüßung.
+- Vier Python-Unittests, Python-/Shell-Syntax und Railway-TOML bestanden. Compose-YAML manuell geprüft.
+- Erster lokaler Leerlauf-Messwert: circa 842 MiB RAM; keine Aussage über Lastspitzen. Lokaler Testcontainer danach gestoppt.
 
-Die Tests liefen mit dem von Codex bereitgestellten Python unter `/Users/bruslan/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3`. Das macOS-Systemkommando `/usr/bin/python3` scheitert hier an einer noch nicht angenommenen Xcode-Lizenz. Die Lizenz wurde nicht verändert. Für eigene lokale Tests einen funktionierenden Python-Interpreter verwenden.
+## Railway
 
-## Noch nicht geprüft
+Das bestehende Projekt precious-cat mit Service PersonalAss ist mit Bruslaan/PersonalAss verbunden. HTTPS-Domain personalass-production.up.railway.app auf Zielport 8080 eingerichtet. PORT=8080, Healthcheck /healthz mit 120 Sekunden und Restart ON_FAILURE mit 3 Versuchen konfiguriert. Vorhandene Limits von 1 vCPU und 3 GB RAM sowie eine Replica in EU West beibehalten. Passwort vom Nutzer korrigiert. Nginx-Fix in Commit 5724ba2 gespeichert.
 
-Docker und Railway-CLI sind auf diesem Rechner nicht vorhanden. Es wurde **kein Container gebaut oder gestartet**, kein Repository auf GitHub erstellt und kein Railway-Deployment angelegt. Nginx-Syntax, Debian-Paketinstallation, Chromium-Start und noVNC-Version wurden deshalb nicht im Linux-Container ausgeführt. Der bereitgestellte Netzwerk-Smoke-Test wurde noch nicht gegen einen laufenden Service ausgeführt.
+- Deployment `211a006d-4053-43b5-8581-172aebe4e79b` steht auf Active/Online.
+- Öffentlicher HTTPS-Healthcheck `/healthz`: 200 mit Inhalt `ready`.
+- Liveansicht `/vnc.html` ohne Zugangsdaten: 401.
+- Nach Anmeldung noVNC im lokalen Safari verbunden. Screenshot zeigt Chromium auf dem Cloud-Rechner mit geladener `example.com`-Seite. Keine lokale Anmeldung bei dieser Webseite erforderlich.
 
-## Abnahme im tatsächlichen Deployment
+## Noch offen
 
-| Prüfung | Erwartung | Status |
-|---|---|---|
-| Docker-Build | Alle Pakete installierbar, Entrypoint ausführbar | Offen |
-| Start und Healthcheck | Chromium-Fenster sichtbar, `/healthz` → 200 | Offen |
-| Authentifizierung | Ohne/falsches Passwort 401 auf UI und WebSocket | Offen |
-| WebSocket-Origin | Fremde Origin mit korrekter Anmeldung → 403 | Offen |
-| VNC-Verbindung | Smoke-Test: 101-Upgrade und RFB-Begrüßung | Offen |
-| Livebild | Chromium klar sichtbar; Scroll/Tabwechsel sichtbar | Offen |
-| Wiederverbinden | Derselbe laufende Desktop | Offen |
-| SIGTERM/Restart | Profil sauber schließen, Desktop erneut starten | Offen |
-| Persistenz, Etappe 2 | Mit `/data`-Volume Lesezeichen nach Restart erhalten | Offen |
-| Fehlerbehandlung | Prozessausfall beendet Container; Neustart begrenzt | Offen |
-| Ressourcenkosten | RAM/CPU/Traffic nach 15–30 Minuten messen | Offen |
+- Langzeittest der Bildqualität, Latenz und Wiederverbindung.
+- Vollständiger automatisierter Cloud-Smoke-Test mit den persönlichen Zugangsdaten. Cloud-Anmeldung und Livebild wurden manuell geprüft; der vollständige Smoke-Test lief lokal.
+- Profilpersistenz mit Volume und Neustart (Etappe 2).
+- Browser Use, Sprache und Kleinanzeigen-Ablauf.
 
-Die README beschreibt das Vorgehen und Fehlersuche. Ein erfolgreicher Healthcheck bestätigt eine sichtbare Chromium-Instanz und erreichbare interne Ports, aber weder Bildqualität noch Loginfähigkeit bei Kleinanzeigen.
+Die lokale Prüfung lief mit dem gebündelten Codex-Python. Das macOS-System-Python ist weiterhin durch die Xcode-Lizenz blockiert; diese wurde nicht geändert.

@@ -2,7 +2,7 @@
 
 Sichtbarer Chromium-Browser auf Railway, mit passwortgeschützter Liveansicht im lokalen Browser. Alle besuchten Webseiten und deren Logins laufen im Container. Für diesen Schritt sind keine KI-Schlüssel erforderlich. Sprachsteuerung, Browser Use und Nachrichtenversand sind noch nicht implementiert.
 
-**Status:** Die Dateien sind vorbereitet; Python-Tests wurden lokal ausgeführt. Auf diesem Rechner fehlen Docker und Railway-CLI. Ein Docker-Build, ein sichtbarer Desktop und das Railway-Deployment sind deshalb noch nicht praktisch verifiziert. Siehe [Teststatus](TESTSTATUS.md).
+**Status:** Etappe 1 läuft auf Railway. Die passwortgeschützte [Liveansicht](https://personalass-production.up.railway.app/) zeigt den echten Chromium-Browser; `/healthz` liefert 200 und ohne Anmeldung ist `/vnc.html` mit 401 gesperrt. Der lokale Smoke-Test für Authentifizierung, Origin-Schutz und VNC-WebSocket besteht. Profilpersistenz und Sprachsteuerung folgen später; siehe [Teststatus](TESTSTATUS.md).
 
 ## Aufbau
 
@@ -45,7 +45,7 @@ Die Prozesse laufen als Benutzer `browser`. Der Entrypoint startet als root, ber
 
    Passwort z. B. lokal mit `openssl rand -hex 24` erzeugen und in Railway eintragen. Es gehört nicht ins Repository und muss mir nicht mitgeteilt werden. Kein VNC-Standardpasswort vorhanden.
 
-4. Unter **Settings**: genau **eine Replica**, wenn möglich zunächst Ressourcenobergrenzen von **1 vCPU und 2 GB RAM**, eine nahe europäische Region. Das sind Startwerte, keine gemessenen Mindestanforderungen. Serverless/App Sleeping für den Desktop-Test deaktiviert lassen. `railway.toml` setzt Healthcheck `/healthz`, 120 Sekunden Startzeit und maximal drei Neustartversuche bei Fehlern. Im Dashboard prüfen, ob die Konfiguration übernommen wurde. Das Standard-Railway-[Healthcheck-Verhalten](https://docs.railway.com/deployments/healthchecks) prüft die Bereitschaft beim Deployment; der eigene Supervisor beendet den Container bei einem ausgefallenen Hauptprozess.
+4. Unter **Settings**: genau **eine Replica**, wenn möglich zunächst Ressourcenobergrenzen von **1 vCPU und 2 GB RAM**, eine nahe europäische Region. Das sind Startwerte, keine gemessenen Mindestanforderungen. Serverless/App Sleeping für den Desktop-Test deaktiviert lassen. Im Dashboard Healthcheck `/healthz`, 120 Sekunden Startzeit und maximal drei Neustartversuche bei Fehlern setzen. Das aktuelle Railway-Dashboard weist darauf hin, dass neue Services seit 28.08.2026 nicht mehr für Config as Code aktiviert werden können; `railway.toml` ist daher nur eine Legacy-Referenz und reicht für einen neuen Service nicht aus. Das Standard-Railway-[Healthcheck-Verhalten](https://docs.railway.com/deployments/healthchecks) prüft die Bereitschaft beim Deployment; der eigene Supervisor beendet den Container bei einem ausgefallenen Hauptprozess.
 5. Für den reinen Bildschirmtest ist ein Volume optional. Sobald Logins erhalten bleiben sollen: ein kleines [Volume](https://docs.railway.com/volumes) mit dem Service verbinden und auf **`/data`** mounten. Es enthält `/data/profile`. Es wird erst beim Start gemountet; der Entrypoint berücksichtigt root-eigene Mounts. Nicht gleichzeitig zwei Container gegen dasselbe Profil starten. Ohne Volume geht das Profil bei Ersatz des Containers verloren. Persistenz ist erst nach dem Neustarttest in Etappe 2 bestätigt.
 6. **Settings → Networking → Public Networking → Generate Domain**, Zielport **8080**. Railway stellt dafür [HTTPS mit Zertifikat](https://docs.railway.com/networking/public-networking) bereit. **Keine TCP-Proxys** für 5900/6080/9222 anlegen. Nur den HTTPS-Link öffnen.
 7. Benutzername und Passwort in der Browser-Anmeldung eingeben, dann **Liveansicht öffnen**. Chromium sollte `example.com` sichtbar geöffnet haben. Du brauchst keine lokale Anmeldung bei der besuchten Webseite. In Etappe 1 dient Maus-/Tastaturbedienung ausschließlich zum manuellen Funktionstest; der gewünschte Sprachablauf wird erst später ergänzt.
@@ -77,7 +77,7 @@ Vor dem Start die Preise im Account erneut prüfen. Unter **Workspace Usage → 
 
 ## Optional lokal mit Docker testen
 
-Docker Engine bzw. Docker Desktop ist Voraussetzung und hier noch nicht installiert.
+Docker Engine bzw. Docker Desktop ist Voraussetzung. Docker Desktop 4.95.0 wurde hier installiert und die Engine erfolgreich geprüft.
 
 ```sh
 cp .env.example .env
