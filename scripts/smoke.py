@@ -31,7 +31,7 @@ def main():
         except urllib.error.HTTPError as e:
             return e.code
 
-    for path in ("/", "/vnc.html", "/app/ui.js"):
+    for path in ("/", "/vnc.html", "/app/ui.js", "/api/status"):
         assert status(path) == 401, f"Unauthenticated {path} not rejected"
     assert status("/vnc.html", {"Authorization": "Basic aW52YWxpZDppbnZhbGlk"}) == 401
     assert status("/healthz") == 200, "Desktop not ready"
@@ -39,7 +39,7 @@ def main():
     assert status("/vnc.html", {"Authorization": auth}) == 200
     assert status("/websockify", {"Origin": origin}) == 401
     assert status("/websockify", {"Origin": "https://other.invalid", "Authorization": auth}) == 403
-    # CDP is disabled; these paths must never return a debugging endpoint.
+    # CDP is internal only; the public proxy must never expose debugging routes.
     assert status("/json/version", {"Authorization": auth}) == 404
     key = base64.b64encode(os.urandom(16)).decode()
     port = parsed.port or (443 if parsed.scheme == "https" else 80)

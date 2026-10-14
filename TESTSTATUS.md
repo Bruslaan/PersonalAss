@@ -26,3 +26,13 @@ Das bestehende Projekt precious-cat mit Service PersonalAss ist mit Bruslaan/Per
 - Browser Use, Sprache und Kleinanzeigen-Ablauf.
 
 Die lokale Prüfung lief mit dem gebündelten Codex-Python. Das macOS-System-Python ist weiterhin durch die Xcode-Lizenz blockiert; diese wurde nicht geändert.
+
+## Erweiterung: Volume und Browser Use
+
+- Railway-Volume `personalass-volume` am Service PersonalAss auf `/data` aktiv. Kapazität 5 GB, EU West; berechnet wird die gespeicherte Datenmenge.
+- Browser Use 0.13.11 im Linux-Container installiert. Verbindungsprobe verbindet sich ohne Modellaufruf mit dem bereits sichtbaren Chromium auf Loopback-CDP 9222.
+- Lokaler Profiltest erfolgreich: localStorage-Testwert auf example.com mit Browser Use gesetzt, Container mit benanntem Volume neu gestartet, Wert erfolgreich gelesen.
+- Erweiterter Smoke-Test besteht: Authentifizierung inklusive `/api/status`, WebSocket-Origin-Schutz, Healthcheck, echte VNC-Verbindung; öffentliche CDP-Routen bleiben 404.
+- Neun Unittests bestanden: CSRF-Schutz, ungültige Eingaben, fehlender Schlüssel, Doppelauftrag, tatsächliches Beenden eines Worker-Prozesses, Portprüfung und Ausschluss des API-Schlüssels aus Desktop-Prozessen.
+- `OPENAI_API_KEY` ist noch nicht hinterlegt. Daher kein kostenpflichtiger LLM-Recherchetest durchgeführt. Keine Aussage über Qualität der Kleinanzeigen-Recherche oder API-Kontozugriff.
+- Die Browser-Use-Erweiterung wird nach dem Push auf Railway deployt. Der Cloud-Neustarttest des Profils und die vollständige KI-Recherche bleiben getrennt von den lokalen Nachweisen.

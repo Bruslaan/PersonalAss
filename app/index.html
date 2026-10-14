@@ -2,10 +2,24 @@
 <html lang="de">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Cloud-Browser – Etappe 1</title>
-<style>body{font:18px system-ui;max-width:680px;margin:10vh auto;padding:24px;background:#101827;color:#edf2fa}a{display:inline-block;background:#4264e8;color:white;padding:14px 22px;border-radius:8px;text-decoration:none}p{line-height:1.6}</style>
-<h1>Dein Cloud-Browser</h1>
-<p>Chromium läuft auf dem Cloud-Rechner. Die Liveansicht zeigt seinen Bildschirm. In Etappe 1 kannst du ihn zum Funktionstest mit Maus und Tastatur bedienen.</p>
-<a href="/vnc.html?autoconnect=true&amp;resize=scale&amp;path=websockify">Liveansicht öffnen</a>
-<p>Sprachsteuerung und Browser Use folgen in späteren Etappen. Logins bei Webseiten erfolgen im Cloud-Browser.</p>
+<title>Dein Cloud-Assistent</title>
+<style>
+body{font:17px system-ui;max-width:800px;margin:5vh auto;padding:24px;background:#101827;color:#edf2fa}a,button{display:inline-block;background:#4264e8;color:white;padding:12px 20px;border:0;border-radius:8px;text-decoration:none;cursor:pointer}p{line-height:1.6}textarea{box-sizing:border-box;width:100%;padding:14px;background:#1c2940;color:white;border:1px solid #52617b;border-radius:8px;font:inherit}button:disabled{opacity:.45;cursor:default}#stop{background:#b74242}pre{white-space:pre-wrap;overflow-wrap:anywhere;font:inherit;background:#1c2940;padding:18px;border-radius:8px}.muted{color:#bac8df}.buttons{display:flex;gap:12px;flex-wrap:wrap;margin:16px 0}
+</style>
+<h1>Dein Cloud-Assistent</h1>
+<p>Gib einen Rechercheauftrag ein und verfolge die Aktionen im Cloud-Browser.</p>
+<div class="buttons"><a target="_blank" rel="noopener" href="/vnc.html?autoconnect=true&amp;resize=scale&amp;path=websockify">Liveansicht öffnen</a></div>
+<label for="task">Dein Auftrag</label>
+<textarea id="task" rows="4" maxlength="2000" placeholder="Suche auf Kleinanzeigen nach einer Gimbal-Kamera und vergleiche drei Angebote."></textarea>
+<div class="buttons"><button id="start" disabled>Recherche starten</button><button id="stop" disabled>Stopp</button></div>
+<p id="status" role="status">Verbindung wird geprüft …</p>
+<p id="setup" class="muted"></p>
+<pre id="result" hidden></pre>
+<p class="muted">Für diesen Prototyp: recherchieren und Angebote öffnen. Nachrichtenversand und Sprachsteuerung folgen später. Bei einem Auftrag werden Seiteninhalte und Bildschirmbilder an OpenAI übermittelt. Pro Auftrag höchstens 8 Schritte und 4 Minuten; dies ist kein festes Kostenlimit.</p>
+<script>
+const start=document.querySelector('#start'),stop=document.querySelector('#stop'),status=document.querySelector('#status'),setup=document.querySelector('#setup'),result=document.querySelector('#result');
+async function refresh(){try{const response=await fetch('/api/status',{cache:'no-store'});if(!response.ok)throw Error('Status nicht erreichbar');const s=await response.json();start.disabled=s.state==='running'||!s.key_configured||!s.browser_connected;stop.disabled=s.state!=='running';status.textContent=s.message+(s.step?' · Schritt '+s.step:'');setup.textContent=!s.key_configured?'API-Schlüssel fehlt: In Railway → PersonalAss → Variables → OPENAI_API_KEY hinterlegen und deployen.':'Modell: '+s.model+(s.browser_connected?' · Browser verbunden':' · Browser startet');result.textContent=s.result;result.hidden=!s.result;}catch(e){status.textContent=e.message;start.disabled=true;stop.disabled=true;}}
+async function send(path,data){start.disabled=true;try{const r=await fetch(path,{method:'POST',headers:{'Content-Type':'application/json','X-Cloud-Browser':'1'},body:JSON.stringify(data)});const s=await r.json();if(!r.ok)throw Error(s.error||'Anfrage fehlgeschlagen');await refresh();}catch(e){status.textContent=e.message;}}
+start.onclick=()=>send('/api/start',{task:document.querySelector('#task').value});stop.onclick=()=>send('/api/stop',{});refresh();setInterval(refresh,2000);
+</script>
 </html>

@@ -24,7 +24,7 @@ class RuntimeTests(unittest.TestCase):
     def test_port_validation(self):
         env = {"VIEW_USERNAME": "owner", "VIEW_PASSWORD": "x" * 24}
         self.assertEqual(runtime.config(env)[2], 8080)
-        for port in ("5900", "6080", "8091", "80", "65536", "8080;bad"):
+        for port in ("5900", "6080", "8091", "8092", "9222", "80", "65536", "8080;bad"):
             with self.assertRaises(ValueError):
                 runtime.config(dict(env, PORT=port))
 
@@ -33,10 +33,10 @@ class RuntimeTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as folder:
             marker = Path(folder) / "ready"
             try:
-                with patch.dict(runtime.os.environ, VIEW_PASSWORD="private-value", VIEW_USERNAME="owner"):
+                with patch.dict(runtime.os.environ, VIEW_PASSWORD="private-value", VIEW_USERNAME="owner", OPENAI_API_KEY="private-api-key"):
                     desktop.launch("child", [sys.executable, "-c",
                         "import os,time,pathlib,sys; assert 'VIEW_PASSWORD' not in os.environ; "
-                        "assert 'VIEW_USERNAME' not in os.environ; pathlib.Path(sys.argv[1]).touch(); time.sleep(30)", str(marker)])
+                        "assert 'VIEW_USERNAME' not in os.environ; assert 'OPENAI_API_KEY' not in os.environ; pathlib.Path(sys.argv[1]).touch(); time.sleep(30)", str(marker)])
                 deadline = time.monotonic() + 5
                 while not marker.exists() and time.monotonic() < deadline:
                     time.sleep(0.01)

@@ -18,7 +18,7 @@ def config(env):
     if not 20 <= len(password.encode()) <= 72 or any(c in password for c in "\r\n\x00"):
         raise ValueError("VIEW_PASSWORD: 20–72 UTF-8 bytes, no newline/NUL required")
     port = int(env.get("PORT", "8080"))
-    if not 1024 <= port <= 65535 or port in (5900, 6080, 8091):
+    if not 1024 <= port <= 65535 or port in (5900, 6080, 8091, 8092, 9222):
         raise ValueError("PORT must be an available port between 1024 and 65535")
     return username, password, port
 
@@ -36,7 +36,12 @@ class Desktop:
     def launch(self, name, args):
         # Secrets are used only to generate htpasswd, never inherited by web content.
         env = {k: v for k, v in os.environ.items()
-               if k not in ("VIEW_PASSWORD", "VIEW_USERNAME")}
+               if k not in ("VIEW_PASSWORD", "VIEW_USERNAME")
+               and not any(word in k.upper() for word in ("API_KEY", "TOKEN", "SECRET", "PASSWORD"))}
+        if name == "agent-api" and os.environ.get("OPENAI_API_KEY"):
+            env["OPENAI_API_KEY"] = os.environ["OPENAI_API_KEY"]
+        env["ANONYMIZED_TELEMETRY"] = "false"
+        env["BROWSER_USE_LOGGING_LEVEL"] = "error"
         self.processes[name] = subprocess.Popen(args, env=env, start_new_session=True)
         print(f"Started {name}", flush=True)
 
@@ -44,7 +49,7 @@ class Desktop:
         if not self.started or self.stop.is_set() or any(p.poll() is not None for p in self.processes.values()):
             return False
         try:
-            for port in (5900, 6080):
+            for port in (5900, 6080, 8092, 9222):
                 with socket.create_connection(("127.0.0.1", port), timeout=1):
                     pass
             visible = subprocess.run(
@@ -134,8 +139,10 @@ def main():
         desktop.launch("chromium", ["chromium", "--no-sandbox", "--disable-dev-shm-usage",
                                     "--no-first-run", "--no-default-browser-check",
                                     "--password-store=basic", "--user-data-dir=/data/profile",
+                                    "--remote-debugging-address=127.0.0.1", "--remote-debugging-port=9222",
                                     "--disk-cache-size=104857600", "--window-size=1280,800",
                                     "--start-maximized", "https://example.com"])
+        desktop.launch("agent-api", ["/opt/agent-venv/bin/python", "/app/agent_api.py"])
         desktop.started = True
         while not desktop.stop.wait(0.5):
             for name, process in desktop.processes.items():
