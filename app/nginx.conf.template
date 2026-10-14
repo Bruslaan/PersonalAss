@@ -1,7 +1,7 @@
 daemon off;
 worker_processes 1;
 pid /tmp/cloud-browser/nginx.pid;
-error_log /dev/stderr warn;
+error_log stderr warn;
 events { worker_connections 128; }
 http {
     include /etc/nginx/mime.types;
@@ -10,6 +10,9 @@ http {
     server_tokens off;
     client_body_temp_path /tmp/cloud-browser/body;
     proxy_temp_path /tmp/cloud-browser/proxy;
+    fastcgi_temp_path /tmp/cloud-browser/fastcgi;
+    uwsgi_temp_path /tmp/cloud-browser/uwsgi;
+    scgi_temp_path /tmp/cloud-browser/scgi;
     map $http_upgrade $connection_upgrade { default upgrade; '' close; }
     map $http_origin $origin_host {
         default "";
